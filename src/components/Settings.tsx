@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Target } from 'lucide-react';
-import { UserSettings, ChantGoal } from '../types';
+import { UserSettings } from '../types';
 
 interface SettingsProps {
   settings: UserSettings;
