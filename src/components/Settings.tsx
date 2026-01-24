@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Target } from 'lucide-react';
+import { Plus, Trash2, Target, Cloud, Copy, Check } from 'lucide-react';
 import { UserSettings } from '../types';
+import { getUserBackupCode } from '../firebase/services';
 
 interface SettingsProps {
   settings: UserSettings;
@@ -11,6 +12,13 @@ interface SettingsProps {
 function Settings({ settings, onUpdateSettings }: SettingsProps) {
   const [newChantName, setNewChantName] = useState('');
   const [showAddChant, setShowAddChant] = useState(false);
+  const [backupCode, setBackupCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const code = getUserBackupCode();
+    setBackupCode(code);
+  }, []);
 
   const handleAddChant = () => {
     if (newChantName.trim() && !settings.availableChants.includes(newChantName.trim())) {
@@ -55,8 +63,65 @@ function Settings({ settings, onUpdateSettings }: SettingsProps) {
     return goal?.[type] || '';
   };
 
+  const handleCopyBackupCode = async () => {
+    if (backupCode) {
+      try {
+        await navigator.clipboard.writeText(backupCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error('Failed to copy:', error);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Cloud Backup Status */}
+      {backupCode && (
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-zen-gold/20">
+          <div className="flex items-center gap-2 mb-4">
+            <Cloud className="text-zen-gold" size={24} />
+            <h2 className="text-xl font-bold text-zen-sage">雲端備份</h2>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-zen-sage">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>自動備份已啟用</span>
+            </div>
+
+            <div className="bg-zen-cream p-4 rounded-lg">
+              <p className="text-sm text-zen-sage mb-2 font-medium">您的備份代碼：</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-white px-3 py-2 rounded border border-zen-gold/30 text-xs font-mono text-zen-dark break-all">
+                  {backupCode}
+                </code>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleCopyBackupCode}
+                  className="p-2 bg-zen-gold text-white rounded-lg hover:bg-zen-gold/90 transition-colors"
+                  title="複製代碼"
+                >
+                  {copied ? <Check size={20} /> : <Copy size={20} />}
+                </motion.button>
+              </div>
+              <p className="text-xs text-zen-sage/70 mt-2">
+                ⚠️ 請妥善保存此代碼！若需在其他設備上恢復數據，請聯繫技術支援。
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-800">
+                💡 <strong>自動備份說明：</strong>您的所有念佛記錄、設定和經文都會自動備份到雲端，
+                即使清除瀏覽器數據也不會丟失。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Available Chants */}
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-zen-gold/20">
         <div className="flex items-center justify-between mb-4">

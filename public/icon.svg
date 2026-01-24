@@ -1,0 +1,30 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="512" height="512" fill="#fdfbf7" rx="128"/>
+
+  <!-- 金色圓形背景 -->
+  <circle cx="256" cy="256" r="200" fill="#d4a373" opacity="0.2"/>
+
+  <!-- 蓮花符號 -->
+  <g transform="translate(256, 280)">
+    <!-- 蓮花花瓣 -->
+    <ellipse cx="0" cy="-40" rx="30" ry="60" fill="#d4a373" opacity="0.8"/>
+    <ellipse cx="-35" cy="-20" rx="30" ry="60" fill="#d4a373" opacity="0.7" transform="rotate(-45 -35 -20)"/>
+    <ellipse cx="35" cy="-20" rx="30" ry="60" fill="#d4a373" opacity="0.7" transform="rotate(45 35 -20)"/>
+    <ellipse cx="-45" cy="10" rx="30" ry="60" fill="#d4a373" opacity="0.6" transform="rotate(-70 -45 10)"/>
+    <ellipse cx="45" cy="10" rx="30" ry="60" fill="#d4a373" opacity="0.6" transform="rotate(70 45 10)"/>
+
+    <!-- 中心 -->
+    <circle cx="0" cy="0" r="25" fill="#6b705c"/>
+  </g>
+
+  <!-- 念珠 -->
+  <g transform="translate(256, 150)">
+    <circle cx="0" cy="-30" r="12" fill="#6b705c"/>
+    <circle cx="20" cy="-25" r="12" fill="#6b705c" opacity="0.8"/>
+    <circle cx="-20" cy="-25" r="12" fill="#6b705c" opacity="0.8"/>
+  </g>
+
+  <!-- 文字 "靜" -->
+  <text x="256" y="420" font-family="serif" font-size="80" fill="#6b705c" text-anchor="middle" font-weight="bold">靜</text>
+</svg>

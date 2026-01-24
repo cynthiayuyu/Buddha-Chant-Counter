@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, RotateCcw } from 'lucide-react';
 import { ChantRecord, UserSettings } from '../types';
@@ -12,6 +12,15 @@ interface ZenCounterProps {
 function ZenCounter({ records, settings, onAddRecord }: ZenCounterProps) {
   const [selectedChant, setSelectedChant] = useState(settings.availableChants[0] || '');
   const [sessionCount, setSessionCount] = useState(0);
+
+  // Sync selectedChant with available chants when settings change
+  useEffect(() => {
+    // If current selected chant is not in the available chants list, reset it
+    if (settings.availableChants.length > 0 && !settings.availableChants.includes(selectedChant)) {
+      setSelectedChant(settings.availableChants[0]);
+      setSessionCount(0);
+    }
+  }, [settings.availableChants, selectedChant]);
 
   const handleIncrement = () => {
     const newCount = sessionCount + 1;
@@ -43,6 +52,18 @@ function ZenCounter({ records, settings, onAddRecord }: ZenCounterProps) {
   const lifetimeTotal = records
     .filter((r) => r.chantName === selectedChant)
     .reduce((sum, r) => sum + r.count, 0);
+
+  // Handle empty chants list
+  if (settings.availableChants.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-zen-gold/20">
+          <p className="text-zen-sage text-lg mb-4">尚無念佛項目</p>
+          <p className="text-zen-sage/70 text-sm">請前往「設定」頁面新增念佛項目</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
