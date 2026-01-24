@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -37,6 +37,13 @@ function Stats({ records, settings, updateSettings }: StatsProps) {
 
     return tabs;
   }, [settings.availableChants, settings.statsTabOrder]);
+
+  // Reset selectedTab to '全部' if current tab is removed
+  useEffect(() => {
+    if (!orderedTabs.includes(selectedTab)) {
+      setSelectedTab('全部');
+    }
+  }, [orderedTabs, selectedTab]);
 
   const handleOpenReorder = () => {
     // Initialize temp order with current chants (excluding "全部")
