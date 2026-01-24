@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - claude/debug-and-fix-bugs-xOCsc
   workflow_dispatch:
 
 permissions:
