@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/Buddha-Chant-Counter/',
+  base: '/Buddha-Chant/',
   plugins: [
     react(),
     VitePWA({
@@ -18,21 +18,21 @@ export default defineConfig({
         background_color: '#fdfbf7',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/Buddha-Chant-Counter/',
-        start_url: '/Buddha-Chant-Counter/',
+        scope: '/Buddha-Chant/',
+        start_url: '/Buddha-Chant/',
         icons: [
           {
-            src: '/Buddha-Chant-Counter/pwa-192x192.png',
+            src: '/Buddha-Chant/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/Buddha-Chant-Counter/pwa-512x512.png',
+            src: '/Buddha-Chant/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: '/Buddha-Chant-Counter/pwa-512x512.png',
+            src: '/Buddha-Chant/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
