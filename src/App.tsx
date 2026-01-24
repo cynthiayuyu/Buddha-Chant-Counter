@@ -6,6 +6,16 @@ import Stats from './components/Stats';
 import Sutras from './components/Sutras';
 import Settings from './components/Settings';
 import { Page, ChantRecord, UserSettings, Sutra } from './types';
+import {
+  signInAnonymouslyUser,
+  onAuthStateChange,
+  syncRecords,
+  syncSettings,
+  syncSutras,
+  loadRecords,
+  loadSettings,
+  loadSutras,
+} from './firebase/services';
 
 const STORAGE_KEYS = {
   RECORDS: 'zen-chant-records',
@@ -23,9 +33,106 @@ function App() {
     goals: [],
   });
   const [sutras, setSutras] = useState<Sutra[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from localStorage on mount
+  // Initialize Firebase Authentication and load data
   useEffect(() => {
+    const initAuth = async () => {
+      try {
+        // Try to sign in anonymously
+        await signInAnonymouslyUser();
+      } catch (error) {
+        console.error('Auth error:', error);
+      }
+    };
+
+    // Listen to auth state changes
+    const unsubscribe = onAuthStateChange(async (user) => {
+      if (user) {
+        setIsAuthenticated(true);
+
+        // Load data from Firebase
+        try {
+          const [firebaseRecords, firebaseSettings, firebaseSutras] = await Promise.all([
+            loadRecords(),
+            loadSettings(),
+            loadSutras(),
+          ]);
+
+          // Use Firebase data if available, otherwise use localStorage
+          if (firebaseRecords) {
+            setRecords(firebaseRecords);
+          } else {
+            // Load from localStorage as fallback
+            const savedRecords = localStorage.getItem(STORAGE_KEYS.RECORDS);
+            if (savedRecords) {
+              const parsed = JSON.parse(savedRecords);
+              setRecords(parsed);
+              // Sync to Firebase
+              await syncRecords(parsed);
+            }
+          }
+
+          if (firebaseSettings) {
+            setSettings({
+              ...firebaseSettings,
+              availableChants: sortByPhonetic(firebaseSettings.availableChants || DEFAULT_CHANTS),
+            });
+          } else {
+            // Load from localStorage as fallback
+            const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+            if (savedSettings) {
+              const parsed = JSON.parse(savedSettings);
+              const settingsData = {
+                ...parsed,
+                availableChants: sortByPhonetic(parsed.availableChants || DEFAULT_CHANTS),
+              };
+              setSettings(settingsData);
+              // Sync to Firebase
+              await syncSettings(settingsData);
+            } else {
+              const defaultSettings = {
+                availableChants: sortByPhonetic(DEFAULT_CHANTS),
+                goals: [],
+              };
+              setSettings(defaultSettings);
+              await syncSettings(defaultSettings);
+            }
+          }
+
+          if (firebaseSutras) {
+            setSutras(firebaseSutras);
+          } else {
+            // Load from localStorage as fallback
+            const savedSutras = localStorage.getItem(STORAGE_KEYS.SUTRAS);
+            if (savedSutras) {
+              const parsed = JSON.parse(savedSutras);
+              setSutras(parsed);
+              // Sync to Firebase
+              await syncSutras(parsed);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading data:', error);
+          // Fallback to localStorage if Firebase fails
+          loadFromLocalStorage();
+        }
+
+        setIsLoading(false);
+      } else {
+        setIsAuthenticated(false);
+        setIsLoading(false);
+      }
+    });
+
+    initAuth();
+
+    return () => unsubscribe();
+  }, []);
+
+  // Helper function to load from localStorage
+  const loadFromLocalStorage = () => {
     const savedRecords = localStorage.getItem(STORAGE_KEYS.RECORDS);
     const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
     const savedSutras = localStorage.getItem(STORAGE_KEYS.SUTRAS);
@@ -35,7 +142,6 @@ function App() {
     }
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings);
-      // Ensure availableChants is sorted phonetically
       setSettings({
         ...parsed,
         availableChants: sortByPhonetic(parsed.availableChants || DEFAULT_CHANTS),
@@ -49,20 +155,41 @@ function App() {
     if (savedSutras) {
       setSutras(JSON.parse(savedSutras));
     }
-  }, []);
+  };
 
-  // Save data to localStorage whenever it changes
+  // Save data to localStorage and Firebase whenever it changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.RECORDS, JSON.stringify(records));
-  }, [records]);
+    if (!isLoading && records.length >= 0) {
+      localStorage.setItem(STORAGE_KEYS.RECORDS, JSON.stringify(records));
+      if (isAuthenticated) {
+        syncRecords(records).catch((error) => {
+          console.error('Error syncing records:', error);
+        });
+      }
+    }
+  }, [records, isAuthenticated, isLoading]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-  }, [settings]);
+    if (!isLoading && settings.availableChants.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      if (isAuthenticated) {
+        syncSettings(settings).catch((error) => {
+          console.error('Error syncing settings:', error);
+        });
+      }
+    }
+  }, [settings, isAuthenticated, isLoading]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SUTRAS, JSON.stringify(sutras));
-  }, [sutras]);
+    if (!isLoading && sutras.length >= 0) {
+      localStorage.setItem(STORAGE_KEYS.SUTRAS, JSON.stringify(sutras));
+      if (isAuthenticated) {
+        syncSutras(sutras).catch((error) => {
+          console.error('Error syncing sutras:', error);
+        });
+      }
+    }
+  }, [sutras, isAuthenticated, isLoading]);
 
   // Helper function to sort by phonetic order (Zhuyin/Bopomofo)
   const sortByPhonetic = (chants: string[]): string[] => {
@@ -109,12 +236,27 @@ function App() {
     { id: 'settings' as Page, icon: SettingsIcon, label: '設定' },
   ];
 
+  // Show loading screen while authenticating
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-zen-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-zen-gold border-t-transparent mx-auto mb-4"></div>
+          <p className="text-zen-sage text-lg">正在載入數據...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-zen-cream pb-20">
       {/* Header */}
       <header className="bg-gradient-to-r from-zen-gold to-zen-sage text-white py-6 px-4 shadow-lg">
         <h1 className="text-3xl font-bold text-center">靜心念佛</h1>
         <p className="text-center text-sm mt-1 opacity-90">Zen Chanting</p>
+        {isAuthenticated && (
+          <p className="text-center text-xs mt-2 opacity-75">☁️ 雲端備份已啟用</p>
+        )}
       </header>
 
       {/* Main Content */}
